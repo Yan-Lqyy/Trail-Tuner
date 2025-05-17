@@ -192,11 +192,11 @@
 </div>
 
 <!-- Sub-Condition Template (hidden) -->
-<div id="sub-condition-template" style="display:none;">
+<template id="sub-condition-template">
     <div class="sub-condition-item row gx-1 gy-2 mb-2 align-items-center">
         <div class="col-sm-5">
             <select class="form-select form-select-sm condition-attribute-select">
-                <option value="">-- Attribute --</option>
+                <option value="" selected disabled>-- Attribute --</option> <!-- Added selected disabled -->
                 <!-- Populated by JS -->
             </select>
         </div>
@@ -212,7 +212,7 @@
             </button>
         </div>
     </div>
-</div>
+</template>
 
 <!-- Priority Rule Template would be similar to speed-rule-template, just ensure names are priority_* -->
 <div id="priority-rule-template" style="display: none;">
@@ -265,6 +265,7 @@
         </div>
     </div>
 </div>
+
 
 
     <footer class="bg-light text-center text-lg-start mt-5">
