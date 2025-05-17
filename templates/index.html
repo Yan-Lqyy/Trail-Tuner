@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Tuner - GraphHopper Custom Model Generator (Bike)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-bicycle"></i> Trail Tuner
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <p class="lead">Craft your perfect cycling route preferences for GraphHopper.</p>
+
+        <form method="POST" id="customModelForm">
+            <!-- Speed Rules Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light-green text-white">
+                    <h5 class="mb-0"><i class="fas fa-tachometer-alt"></i> Speed Rules</h5>
+                </div>
+                <div class="card-body">
+                    <div id="speed-rules-container">
+                        <!-- Speed rules will be added here by JS -->
+                    </div>
+                    <button type="button" class="btn btn-outline-success btn-sm mt-2" onclick="addRule('speed')">
+                        <i class="fas fa-plus-circle"></i> Add Speed Rule
+                    </button>
+                </div>
+            </div>
+
+            <!-- Priority Rules Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light-orange text-white">
+                    <h5 class="mb-0"><i class="fas fa-star"></i> Priority Rules</h5>
+                </div>
+                <div class="card-body">
+                    <div id="priority-rules-container">
+                        <!-- Priority rules will be added here by JS -->
+                    </div>
+                    <button type="button" class="btn btn-outline-warning btn-sm mt-2" onclick="addRule('priority')">
+                        <i class="fas fa-plus-circle"></i> Add Priority Rule
+                    </button>
+                </div>
+            </div>
+
+            <!-- Distance Influence Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light-blue text-white">
+                    <h5 class="mb-0"><i class="fas fa-ruler-combined"></i> Distance Influence</h5>
+                </div>
+                <div class="card-body">
+                    <label for="distance_influence" class="form-label">
+                        Distance Influence (e.g., 70):
+                        <small class="text-muted">Time (seconds) to save for 1km detour. Higher values prefer shorter routes.</small>
+                    </label>
+                    <input type="number" class="form-control" id="distance_influence" name="distance_influence" step="any" placeholder="e.g., 70" value="{{ request.form.get('distance_influence', '') }}">
+                </div>
+            </div>
+
+            <!-- Areas Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light-purple text-white">
+                    <h5 class="mb-0"><i class="fas fa-map-marked-alt"></i> Areas (GeoJSON)</h5>
+                </div>
+                <div class="card-body">
+                    <label for="areas_geojson" class="form-label">
+                        Define custom areas as a GeoJSON FeatureCollection:
+                        <small class="text-muted">Each feature must be a Polygon with an 'id' property (e.g., "custom_area1"). Use `in_custom_area1` in conditions.</small>
+                    </label>
+                    <textarea class="form-control" id="areas_geojson" name="areas_geojson" rows="8" placeholder='{
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "id": "my_slow_zone",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[...],[...],[...],[...]]]
+        }
+    }]
+}'>{{ request.form.get('areas_geojson', '') }}</textarea>
+                </div>
+            </div>
+
+            <div class="text-center mb-3">
+                <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-cogs"></i> Generate JSON</button>
+            </div>
+        </form>
+
+        {% if generated_json %}
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-code"></i> Generated Custom Model JSON</h5>
+            </div>
+            <div class="card-body">
+                <textarea id="jsonOutput" class="form-control" rows="15" readonly>{{ generated_json }}</textarea>
+                <button class="btn btn-secondary btn-sm mt-2" onclick="copyJsonToClipboard()">
+                    <i class="fas fa-copy"></i> Copy to Clipboard
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attribute Reference -->
+        <div class="card mt-5 mb-5 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-book-open"></i> Common Bike Attributes Reference</h5>
+            </div>
+            <div class="card-body small">
+                <p>Use these in your 'Condition Statement' fields. <a href="https://github.com/graphhopper/graphhopper/blob/master/docs/core/custom-models.md#road-attributes" target="_blank">Full Docs</a></p>
+                <ul>
+                    <li><strong>road_class:</strong> CYCLEWAY, PATH, FOOTWAY, TRACK, SERVICE, RESIDENTIAL, TERTIARY, UNCLASSIFIED, STEPS, ...</li>
+                    <li><strong>surface:</strong> PAVED, ASPHALT, UNPAVED, GRAVEL, DIRT, SAND, GRASS, COBBLESTONE, ...</li>
+                    <li><strong>smoothness:</strong> EXCELLENT, GOOD, INTERMEDIATE, BAD, VERY_BAD, HORRIBLE, ...</li>
+                    <li><strong>bike_network:</strong> INTERNATIONAL, NATIONAL, REGIONAL, LOCAL, MOUNTAIN, ...</li>
+                    <li><strong>track_type:</strong> GRADE1, GRADE2, GRADE3, GRADE4, GRADE5 (higher is rougher)</li>
+                    <li><strong>mtb_scale:</strong> 0-6 (numeric)</li>
+                    <li><strong>average_slope, max_slope:</strong> (numeric, e.g., `average_slope > 5`)</li>
+                    <li><strong>toll:</strong> ALL, HGV, NO, MISSING</li>
+                    <li><strong>bicycle:</strong> YES, NO, DESIGNATED, OFFICIAL, PERMISSIVE, DISMOUNT</li>
+                    <li><strong>Booleans (true/false):</strong> `roundabout`, `tunnel`, `bridge`, `ford`, `road_class_link` (e.g., `if: "tunnel"`)</li>
+                    <li><strong>Areas:</strong> `in_YOUR_AREA_ID` (e.g., `if: "in_my_slow_zone"`)</li>
+                </ul>
+                 <p><strong>Operators:</strong> `==` (equals), `!=` (not equals), `>` (greater), `<` (less), `>=` (greater or equals), `<=` (less or equals), `&&` (AND), `||` (OR). String values need quotes: `surface == "GRAVEL"`. Numbers don't: `max_slope > 10`.</p>
+            </div>
+        </div>
+
+    </div>
+
+<!-- Rule Templates (hidden) - Example for SPEED, Priority will be similar -->
+<div id="speed-rule-template" style="display: none;">
+    <div class="rule-item border p-3 mb-3 rounded">
+        <div class="row g-2">
+            <div class="col-12 mb-2">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-2">
+                        <label class="form-label">Type</label>
+                        <select name="speed_condition_type" class="form-select form-select-sm condition-type-select">
+                            <option value="if">IF</option>
+                            <option value="else_if">ELSE IF</option>
+                            <option value="else">ELSE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-auto"> <!-- Connector type for the *whole* condition block -->
+                        <label class="form-label">Logic</label>
+                        <select name="speed_block_connector" class="form-select form-select-sm condition-block-connector" title="How multiple criteria below are combined">
+                            <option value="&&">ALL (AND)</option>
+                            <option value="||">ANY (OR)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-Conditions Container -->
+            <div class="col-12 sub-conditions-container">
+                <!-- Sub-condition items will be added here by JS -->
+            </div>
+
+            <div class="col-12 mt-2">
+                <button type="button" class="btn btn-outline-info btn-sm add-sub-condition-btn">
+                    <i class="fas fa-plus"></i> Add Criterion
+                </button>
+            </div>
+            <input type="hidden" name="speed_condition_statement" class="generated-condition-statement">
+
+            <!-- Action part (same as before) -->
+            <div class="col-md-3 mt-2"> <!-- Adjusted col width slightly -->
+                <label class="form-label">Action</label>
+                <select name="speed_action_type" class="form-select form-select-sm">
+                    <option value="multiply_by">Multiply Speed By</option>
+                    <option value="limit_to">Limit Speed To (km/h)</option>
+                </select>
+            </div>
+            <div class="col-md-2 mt-2"> <!-- Adjusted col width slightly -->
+                <label class="form-label">Value</label>
+                <input type="text" name="speed_action_value" class="form-control form-control-sm" placeholder="e.g., 0.8">
+            </div>
+            <div class="col-md-1 d-flex align-items-end mt-2">
+                <button type="button" class="btn btn-danger btn-sm remove-rule-btn" onclick="removeRule(this)">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sub-Condition Template (hidden) -->
+<div id="sub-condition-template" style="display:none;">
+    <div class="sub-condition-item row gx-1 gy-2 mb-2 align-items-center">
+        <div class="col-sm-5">
+            <select class="form-select form-select-sm condition-attribute-select">
+                <option value="">-- Attribute --</option>
+                <!-- Populated by JS -->
+            </select>
+        </div>
+        <div class="col-sm-3 condition-operator-container">
+            <!-- Operator select populated by JS -->
+        </div>
+        <div class="col-sm-3 condition-value-container">
+            <!-- Value input/select populated by JS -->
+        </div>
+        <div class="col-sm-1">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-sub-condition-btn">
+                <i class="fas fa-minus-circle"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Priority Rule Template would be similar to speed-rule-template, just ensure names are priority_* -->
+<div id="priority-rule-template" style="display: none;">
+    <div class="rule-item border p-3 mb-3 rounded">
+        <div class="row g-2">
+            <div class="col-12 mb-2">
+                 <div class="row g-2 align-items-center">
+                    <div class="col-md-2">
+                        <label class="form-label">Type</label>
+                        <select name="priority_condition_type" class="form-select form-select-sm condition-type-select">
+                            <option value="if">IF</option>
+                            <option value="else_if">ELSE IF</option>
+                            <option value="else">ELSE</option>
+                        </select>
+                    </div>
+                     <div class="col-md-auto">
+                        <label class="form-label">Logic</label>
+                        <select name="priority_block_connector" class="form-select form-select-sm condition-block-connector">
+                            <option value="&&">ALL (AND)</option>
+                            <option value="||">ANY (OR)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 sub-conditions-container">
+                <!-- Sub-condition items for priority -->
+            </div>
+            <div class="col-12 mt-2">
+                <button type="button" class="btn btn-outline-info btn-sm add-sub-condition-btn">
+                     <i class="fas fa-plus"></i> Add Criterion
+                </button>
+            </div>
+            <input type="hidden" name="priority_condition_statement" class="generated-condition-statement">
+
+            <div class="col-md-3 mt-2">
+                <label class="form-label">Action</label>
+                <select name="priority_action_type" class="form-select form-select-sm" disabled>
+                    <option value="multiply_by" selected>Multiply Priority By</option>
+                </select>
+            </div>
+            <div class="col-md-2 mt-2">
+                <label class="form-label">Value</label>
+                <input type="text" name="priority_action_value" class="form-control form-control-sm" placeholder="e.g., 0.1">
+            </div>
+            <div class="col-md-1 d-flex align-items-end mt-2">
+                <button type="button" class="btn btn-danger btn-sm remove-rule-btn" onclick="removeRule(this)">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+            Trail Tuner © <span id="currentYear"></span> - Create GraphHopper Custom Models for Cycling
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

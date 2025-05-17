@@ -1,0 +1,96 @@
+body {
+    font-family: 'Arial', sans-serif; /* Or a more adventurous font */
+    background-color: #f4f7f6; /* Light, earthy tone */
+    color: #333;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.navbar-brand .fa-bicycle {
+    margin-right: 8px;
+    color: #c8e6c9; /* Light green accent for the icon */
+}
+
+.card-header {
+    font-weight: 500;
+}
+.bg-light-green { background-color: #66bb6a !important; } /* Softer green for speed */
+.bg-light-orange { background-color: #ffa726 !important; } /* Softer orange for priority */
+.bg-light-blue { background-color: #42a5f5 !important; } /* Softer blue for distance */
+.bg-light-purple { background-color: #ab47bc !important; } /* Softer purple for areas */
+
+
+.lead {
+    color: #555;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+}
+
+.btn-primary {
+    background-color: #2e7d32; /* Darker green for primary action */
+    border-color: #2e7d32;
+}
+.btn-primary:hover {
+    background-color: #1b5e20;
+    border-color: #1b5e20;
+}
+
+.rule-item {
+    background-color: #fff;
+}
+
+.rule-item .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    color: #555;
+}
+
+#jsonOutput {
+    background-color: #272822; /* Monokai-like background */
+    color: #f8f8f2; /* Light text for dark background */
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+}
+
+footer {
+    border-top: 1px solid #ddd;
+}
+
+/* Ensure labels and inputs in rule items are vertically aligned somewhat better */
+.rule-item .row > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Aligns button to bottom */
+}
+.rule-item .row > div > label {
+    margin-bottom: auto; /* Pushes label to top */
+}
+
+/* Small adjustments for remove button alignment */
+.rule-item .d-flex.align-items-end {
+    padding-bottom: 0.1rem; /* Adjust as needed for specific Bootstrap version */
+}
+
+.sub-conditions-container .sub-condition-item {
+    padding: 0.5rem;
+    background-color: #f8f9fa; /* Light background for each criterion */
+    border: 1px solid #e9ecef;
+    border-radius: 0.25rem;
+}
+
+.sub-condition-item .form-select-sm,
+.sub-condition-item .form-control-sm {
+    font-size: 0.8rem; /* Make inputs in sub-conditions a bit smaller */
+}
+
+.remove-sub-condition-btn {
+    padding: 0.25rem 0.5rem; /* Smaller remove button */
+}
+
+.condition-block-connector {
+    max-width: 120px; /* Or whatever fits well */
+}
